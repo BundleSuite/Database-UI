@@ -43,6 +43,8 @@ export default function Home() {
   const [storesSortField, setStoresSortField] = useState('installedAt');
   const [storesSortDirection, setStoresSortDirection] = useState('desc');
   const itemsPerPage = 10;
+  const [bundleSearch, setBundleSearch] = useState('');
+  const [bundlesSortDirection, setBundlesSortDirection] = useState('desc');
 
   useEffect(() => {
     async function fetchData() {
@@ -123,6 +125,47 @@ export default function Home() {
     setStoresPage(1);
   };
 
+  const handleBundleSearch = (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    setBundleSearch(searchTerm);
+    setBundlesPage(1); // Reset to first page when search changes
+
+    // Filter bundles based on the search term
+    const filteredBundles = bundles.filter(bundle =>{
+      bundle.bundleName.toLowerCase().includes(searchTerm);
+    }
+    );
+   paginateData(filteredBundles, 1);
+
+    // Update paginatedBundles with the filtered results
+  };
+
+  const handleBundleSortChange = (e) => {
+    setBundlesSortDirection(e.target.value);
+    setBundlesPage(1);
+  };
+
+  const filteredAndSortedBundles = useMemo(() => {
+    let result = bundles;
+    
+    // Sort
+    result.sort((a, b) => {
+      // Ensure createdAt is a valid date string, if not, use a fallback value
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      
+      // Check if dates are valid
+      if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+        console.error('Invalid date encountered:', a.createdAt, b.createdAt);
+        return 0; // Keep original order if dates are invalid
+      }
+      
+      return bundlesSortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
+    });
+    
+    return result;
+  }, [bundles, bundleSearch, bundlesSortDirection]);
+
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -188,6 +231,25 @@ export default function Home() {
         />
 
         <h2>Bundles</h2>
+        <div className="bundleSearch">
+          <input
+            type="text"
+            placeholder="Search bundles..."
+            value={bundleSearch}
+            onChange={handleBundleSearch}
+            className={styles.searchInput}
+          />
+          <label htmlFor="bundlesSort">Sort by creation date: </label>
+          <select
+            id="bundlesSort"
+            value={bundlesSortDirection}
+            onChange={handleBundleSortChange}
+            className={styles.sortSelect}
+          >
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+        </div>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -226,7 +288,7 @@ export default function Home() {
         </table>
         <Pagination
           currentPage={bundlesPage}
-          totalPages={Math.ceil(bundles.length / itemsPerPage)}
+          totalPages={Math.ceil(filteredAndSortedBundles.length / itemsPerPage)}
           onPageChange={setBundlesPage}
         />
 

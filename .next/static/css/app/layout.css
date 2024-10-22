@@ -82,4 +82,9 @@ a {
 .sort-button{
   background: #171717 !important;
 }
+.bundleSearch{
+  display: flex;
+  justify-content: end;
+  gap: 20px;
+}
 

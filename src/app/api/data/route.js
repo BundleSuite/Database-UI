@@ -71,6 +71,7 @@ export async function GET() {
         userId: true,
         ProductHandle: true,
         products: true,
+        createdAt: true,
       },
     });
 
