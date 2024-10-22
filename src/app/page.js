@@ -42,7 +42,7 @@ export default function Home() {
   const [bundlesPage, setBundlesPage] = useState(1);
   const [storesSortField, setStoresSortField] = useState('installedAt');
   const [storesSortDirection, setStoresSortDirection] = useState('desc');
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchData() {
