@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  bundles       Bundle[]
+  analytics     Analytics[]
+  byobs         BYOB[]
+  onboarding    Boolean   @default(false)
+}
+
+model Bundle {
+  id              Int      @id @default(autoincrement())
+  bundleName      String
+  bundleType      String
+  ProductBundleId String?
+  ProductHandle   String?
+  description     String?
+  discountType    String?
+  discountValue   String?
+  products        Json     // Changed from String to Json
+  userId          String
+  user            Session  @relation(fields: [userId], references: [id])
+  variants        Json?    // Changed from String? to Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Analytics{
+  id                 Int      @id @default(autoincrement())
+  revenue            String
+  orders             String
+  currency           String?
+  userId             String
+  user               Session  @relation(fields: [userId], references: [id])
+}
+
+model ShopInstallation {
+  id          String   @id @default(cuid())
+  shop        String   @unique
+  installedAt DateTime @default(now())
+  shopifyStore ShopifyStore?
+}
+model BYOB {
+  id                    String   @id @default(cuid())
+  productId             String   @unique
+  bundleName            String
+  bundleDescription     String
+  products              Json     // Stored as JSON array
+  isDiscountOptional    Boolean  @default(false)
+  discountType          String   @default("percentage")
+  discountValue         String?
+  noDiscount            Boolean  @default(false)
+  media                 Json     // Stored as JSON array
+  conditions            Json     // Stored as JSON array
+  tierBasedOn           String   @default("percentage")
+  purchaseRequirement   String   @default("quantity")
+  tiers                 Json     // Stored as JSON array
+  productStatus         String   @default("draft")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  userId                String
+  user                  Session  @relation(fields: [userId], references: [id])
+}
+
+model ShopifyStore {
+  id                String   @id @default(cuid())
+  shopInstallation  ShopInstallation @relation(fields: [shop], references: [shop])
+  shop              String   @unique
+  name              String
+  myshopifyDomain   String   @unique
+  url               String
+  eligibleForBundles Boolean
+  storefront        Boolean
+  maxProductVariants Int
+  currencyCode      String
+  planDisplayName   String
+  partnerDevelopment Boolean
+  shopifyPlus       Boolean
+  createdAt         DateTime
+  updatedAt         DateTime @updatedAt
+  contactEmail      String
+  email             String
+  description       String?
+  ianaTimezone      String
+  primaryDomainId   String
+  country           String?
+  
+  // Features
+  expandOperation   Boolean
+  mergeOperation    Boolean
+  updateOperation   Boolean
+}
