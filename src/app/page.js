@@ -164,7 +164,7 @@ export default function Home() {
               <tr key={store.shop}>
                 <td>{store.name}</td>
                 <td>
-                  <a href={`https://${store.shop}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${store.shop}`} target="_blank" rel="noopener noreferrer">
                     {store.shop}
                   </a>
                 </td>
