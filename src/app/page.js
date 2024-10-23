@@ -43,6 +43,11 @@ export default function Home() {
   const [storesSortField, setStoresSortField] = useState('installedAt');
   const [storesSortDirection, setStoresSortDirection] = useState('desc');
   const itemsPerPage = 10;
+  const [bundleSearch, setBundleSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const bundlesPerPage = 10; // Adjust as needed
+  const [paginatedBundles, setPaginatedBundles] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     async function fetchData() {
@@ -111,7 +116,6 @@ export default function Home() {
   };
 
   const paginatedStores = paginateData(sortedShopifyStores, storesPage);
-  const paginatedBundles = paginateData(bundles, bundlesPage);
 
   const handleSort = (field) => {
     if (field === storesSortField) {
@@ -121,6 +125,49 @@ export default function Home() {
       setStoresSortDirection('asc');
     }
     setStoresPage(1);
+  };
+
+  const handleBundleSearch = (e) => {
+    setBundleSearch(e.target.value.toLowerCase());
+    setBundlesPage(1); // Reset to first page when search changes
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const changePage = (newPage) => {
+    setBundlesPage(newPage);
+  };
+
+  useEffect(() => {
+    updateBundlesTable();
+  }, [bundles, bundleSearch, bundlesPage, sortOrder]);
+
+  const updateBundlesTable = () => {
+    // Step 1: Filter bundles based on search term
+    let filteredBundles = bundles.filter(bundle =>
+      bundle.bundleName.toLowerCase().includes(bundleSearch)
+    );
+
+    // Step 2: Sort filtered bundles by createdAt
+    filteredBundles.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    // Step 3: Calculate total pages
+    const totalFilteredBundles = filteredBundles.length;
+    const calculatedTotalPages = Math.ceil(totalFilteredBundles / bundlesPerPage);
+    setTotalPages(calculatedTotalPages);
+
+    // Step 4: Paginate the sorted and filtered bundles
+    const startIndex = (bundlesPage - 1) * bundlesPerPage;
+    const paginatedResults = filteredBundles.slice(startIndex, startIndex + bundlesPerPage);
+
+    // Update state with the paginated, sorted, and filtered bundles
+    setPaginatedBundles(paginatedResults);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -188,47 +235,59 @@ export default function Home() {
         />
 
         <h2>Bundles</h2>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Store Name</th>
-              <th>Store URL</th>
-              <th>Bundle Name</th>
-              <th>Bundle Type</th>
-              <th>Handle</th>
-              <th>Discount Type</th>
-              <th>Discount Value</th>
-              <th>Products</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedBundles.map((bundle) => (
-              <tr key={bundle.id}>
-                <td>{bundle.storeName}</td>
-                <td>
-                  <a href={bundle.storeUrl} target="_blank" rel="noopener noreferrer">
-                    {bundle.storeUrl}
-                  </a>
-                </td>
-                <td>{bundle.bundleName}</td>
-                <td>{bundle.bundleType}</td>
-                <td>{bundle.ProductHandle}</td>
-                <td>{bundle.discountType}</td>
-                <td>{bundle.discountValue}</td>
-                <td>
-                  <button onClick={() => openProductsModal(bundle.products)}>
-                    View Products
-                  </button>
-                </td>
+        <div className="bundleSearch">
+          <input
+            type="text"
+            placeholder="Search bundles..."
+            value={bundleSearch}
+            onChange={handleBundleSearch}
+            className={styles.searchInput}
+          />
+          <button onClick={toggleSortOrder}>
+            Sort by Date ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
+          </button>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Store Name</th>
+                <th>Store URL</th>
+                <th>Bundle Name</th>
+                <th>Bundle Type</th>
+                <th>Handle</th>
+                <th>Discount Type</th>
+                <th>Discount Value</th>
+                <th>Products</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        <Pagination
-          currentPage={bundlesPage}
-          totalPages={Math.ceil(bundles.length / itemsPerPage)}
-          onPageChange={setBundlesPage}
-        />
+            </thead>
+            <tbody>
+              {paginatedBundles.map((bundle) => (
+                <tr key={bundle.id}>
+                  <td>{bundle.storeName}</td>
+                  <td>
+                    <a href={bundle.storeUrl} target="_blank" rel="noopener noreferrer">
+                      {bundle.storeUrl}
+                    </a>
+                  </td>
+                  <td>{bundle.bundleName}</td>
+                  <td>{bundle.bundleType}</td>
+                  <td>{bundle.ProductHandle}</td>
+                  <td>{bundle.discountType}</td>
+                  <td>{bundle.discountValue}</td>
+                  <td>
+                    <button onClick={() => openProductsModal(bundle.products)}>
+                      View Products
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination
+            currentPage={bundlesPage}
+            totalPages={totalPages}
+            onPageChange={changePage}
+          />
+        </div>
 
         <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
           <h2>Products</h2>
