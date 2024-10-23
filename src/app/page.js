@@ -1,5 +1,4 @@
 'use client'
-import Image from "next/image";
 import styles from "./page.module.css";
 import { useState, useEffect, useMemo } from 'react';
 
@@ -31,6 +30,50 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+// New LoginScreen component
+function LoginScreen({ onLogin }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (username === 'BundleSuite' && password === 'BundleSuite@12345') {
+      onLogin();
+    } else {
+      alert('Invalid credentials');
+    }
+  };
+
+  return (
+    <div className="container">
+      <div className="loginBox">
+        <h2 className="title ">Sign In</h2>
+        <form className="form" onSubmit={handleSubmit}>
+          <input
+            className="input"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button className="button" type="submit">
+            Sign In
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [shopifyStores, setShopifyStores] = useState([]);
   const [bundles, setBundles] = useState([]);
@@ -48,6 +91,7 @@ export default function Home() {
   const bundlesPerPage = 10; // Adjust as needed
   const [paginatedBundles, setPaginatedBundles] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -170,8 +214,16 @@ export default function Home() {
     setPaginatedBundles(paginatedResults);
   };
 
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <div className={styles.page}>
@@ -293,6 +345,8 @@ export default function Home() {
           <h2>Products</h2>
           <pre>{JSON.stringify(selectedProducts, null, 2)}</pre>
         </Modal>
+
+        <button onClick={() => setIsLoggedIn(false)}>Logout</button>
       </main>
     </div>
   );
