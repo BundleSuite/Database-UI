@@ -92,6 +92,11 @@ export default function Home() {
   const [paginatedBundles, setPaginatedBundles] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [byobSearch, setByobSearch] = useState('');
+  const [byobSortOrder, setByobSortOrder] = useState('desc');
+  const [byobPage, setByobPage] = useState(1);
+  const [paginatedByob, setPaginatedByob] = useState([]);
+  const [byobTotalPages, setByobTotalPages] = useState(1);
 
   useEffect(() => {
     async function fetchData() {
@@ -191,6 +196,7 @@ export default function Home() {
   const updateBundlesTable = () => {
     // Step 1: Filter bundles based on search term
     let filteredBundles = bundles.filter(bundle =>
+      bundle.bundleType !== 'byob' &&
       bundle.bundleName.toLowerCase().includes(bundleSearch)
     );
 
@@ -216,6 +222,48 @@ export default function Home() {
 
   const handleLogin = () => {
     setIsLoggedIn(true);
+  };
+
+  const handleByobSearch = (e) => {
+    setByobSearch(e.target.value.toLowerCase());
+    setByobPage(1);
+  };
+
+  const toggleByobSortOrder = () => {
+    setByobSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const changeByobPage = (newPage) => {
+    setByobPage(newPage);
+  };
+
+  useEffect(() => {
+    updateByobTable();
+  }, [bundles, byobSearch, byobPage, byobSortOrder]);
+
+  const updateByobTable = () => {
+    // Filter only BYOB bundles
+    let filteredByob = bundles.filter(bundle => 
+      bundle.bundleType === 'byob' && 
+      bundle.bundleName.toLowerCase().includes(byobSearch)
+    );
+
+    // Sort filtered BYOB bundles
+    filteredByob.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return byobSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    // Calculate total pages
+    const totalFilteredByob = filteredByob.length;
+    const calculatedTotalPages = Math.ceil(totalFilteredByob / bundlesPerPage);
+    setByobTotalPages(calculatedTotalPages);
+
+    // Paginate the results
+    const startIndex = (byobPage - 1) * bundlesPerPage;
+    const paginatedResults = filteredByob.slice(startIndex, startIndex + bundlesPerPage);
+    setPaginatedByob(paginatedResults);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -338,6 +386,60 @@ export default function Home() {
             currentPage={bundlesPage}
             totalPages={totalPages}
             onPageChange={changePage}
+          />
+        </div>
+
+        <h2>Build Your Own Bundles (BYOB)</h2>
+        <div className="byobSearch">
+          <div className="byobSearch-box" style={{display: 'flex', gap:'10px', marginBottom:'10px', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+            <input
+              style={{width: '100%'}}
+              type="text"
+              placeholder="Search BYOB bundles..."
+              value={byobSearch}
+              onChange={handleByobSearch}
+              className={styles.searchInput}
+            />
+            <button style={{width: '100%'}} onClick={toggleByobSortOrder}>
+              Sort by Date ({byobSortOrder === 'asc' ? 'Ascending' : 'Descending'})
+            </button>
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Store Name</th>
+                <th>Store URL</th>
+                <th>Bundle Name</th>
+                <th>Discount Type</th>
+                <th>Discount Value</th>
+                <th>Products</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedByob.map((bundle) => (
+                <tr key={bundle.id}>
+                  <td>{bundle.storeName}</td>
+                  <td>
+                    <a href={bundle.storeUrl} target="_blank" rel="noopener noreferrer">
+                      {bundle.storeUrl}
+                    </a>
+                  </td>
+                  <td>{bundle.bundleName}</td>
+                  <td>{bundle.discountType}</td>
+                  <td>{bundle.discountValue}</td>
+                  <td>
+                    <button onClick={() => openProductsModal(bundle.products)}>
+                      View Products
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination
+            currentPage={byobPage}
+            totalPages={byobTotalPages}
+            onPageChange={changeByobPage}
           />
         </div>
 

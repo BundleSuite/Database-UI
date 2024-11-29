@@ -75,8 +75,19 @@ export async function GET() {
       },
     });
 
-    // Calculate bundle count for each store
-    const bundleCountByStore = bundles.reduce((acc, bundle) => {
+    const byobBundles = await prisma.bYOB.findMany({
+      select: {
+        id: true,
+        bundleName: true,
+        discountType: true,
+        discountValue: true,
+        userId: true,
+        products: true,
+        createdAt: true,
+      },
+    });
+
+    const bundleCountByStore = [...bundles, ...byobBundles].reduce((acc, bundle) => {
       const myshopifyDomain = bundle.userId.replace('offline_', '');
       acc[myshopifyDomain] = (acc[myshopifyDomain] || 0) + 1;
       return acc;
@@ -89,20 +100,36 @@ export async function GET() {
       bundleCount: bundleCountByStore[store.shop] || 0
     }));
 
-    const bundlesWithStoreInfo = await Promise.all(bundles.map(async (bundle) => {
-      const myshopifyDomain = bundle.userId.replace('offline_', '');
-      const shopifyStore = await prisma.shopifyStore.findUnique({
-        where: { myshopifyDomain },
-        select: { name: true, url: true },
-      });
-      return {
-        ...bundle,
-        storeName: shopifyStore ? shopifyStore.name : 'Unknown Store',
-        storeUrl: shopifyStore ? shopifyStore.url : '#',
-      };
-    }));
+    const allBundlesWithStoreInfo = await Promise.all([
+      ...bundles.map(async (bundle) => {
+        const myshopifyDomain = bundle.userId.replace('offline_', '');
+        const shopifyStore = await prisma.shopifyStore.findUnique({
+          where: { myshopifyDomain },
+          select: { name: true, url: true },
+        });
+        return {
+          ...bundle,
+          bundleType: bundle.bundleType || 'regular',
+          storeName: shopifyStore ? shopifyStore.name : 'Unknown Store',
+          storeUrl: shopifyStore ? shopifyStore.url : '#',
+        };
+      }),
+      ...byobBundles.map(async (bundle) => {
+        const myshopifyDomain = bundle.userId.replace('offline_', '');
+        const shopifyStore = await prisma.shopifyStore.findUnique({
+          where: { myshopifyDomain },
+          select: { name: true, url: true },
+        });
+        return {
+          ...bundle,
+          bundleType: 'byob',
+          storeName: shopifyStore ? shopifyStore.name : 'Unknown Store',
+          storeUrl: shopifyStore ? shopifyStore.url : '#',
+        };
+      }),
+    ]);
 
-    return NextResponse.json({ shopifyStores: formattedShopifyStores, bundles: bundlesWithStoreInfo })
+    return NextResponse.json({ shopifyStores: formattedShopifyStores, bundles: allBundlesWithStoreInfo })
   } catch (error) {
     console.error('Error fetching data:', error)
     return NextResponse.json({ error: 'Error fetching data' }, { status: 500 })
