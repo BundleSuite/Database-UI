@@ -21,6 +21,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/page.js", "app/api/bundles/route.js", "app/components/bundles-table.tsx", "app/components/stores-table.jsx", "app/components/stores-table.js", "app/layout.js", "app/components/back-button.js", "app/components/navigation/back-button-wrapper.js"],
   "exclude": ["node_modules"]
 }
