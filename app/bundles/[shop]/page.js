@@ -58,7 +58,6 @@ export default function ShopBundlesPage({ params }) {
 
   const containerClasses = "container mx-auto py-10 space-y-8 max-w-7xl px-4 sm:px-6 lg:px-8"
   const headerClasses = "flex flex-col space-y-1.5 pb-6"
-  const statsClasses = "grid gap-4 md:grid-cols-2 lg:grid-cols-4"
 
   return (
     <div className={containerClasses}>
