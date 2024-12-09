@@ -62,12 +62,6 @@ export default function ShopAnalyticsPage({ params }) {
     )
   }
 
-  const formatMetric = (value, formatter = (v) => v) => {
-    if (value === undefined || value === null) return '0';
-    if (typeof value === 'number' && isNaN(value)) return '0';
-    return formatter(value);
-  };
-
   const stats = [
     {
       title: "Total Revenue",
