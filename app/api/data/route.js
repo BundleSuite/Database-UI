@@ -23,6 +23,11 @@ export async function GET() {
             installedAt: true
           }
         }
+      },
+      orderBy: {
+        shopInstallation: {
+          installedAt: 'desc'
+        }
       }
     });
 

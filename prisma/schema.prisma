@@ -48,6 +48,8 @@ model Bundle {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   status          String?
+   analytics       BundleAnalytics[]
+  
 }
 
 model Analytics{
@@ -122,8 +124,10 @@ model BYOB {
   productStatus         String   @default("draft")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  showStepper           Boolean @default(true)
   userId                String
   user                  Session  @relation(fields: [userId], references: [id])
+  analytics             ByobAnalytics[]
 }
 
 model AppSubscription {
@@ -170,3 +174,35 @@ model BundleRevenue {
   @@index([shop, createdAt])
   @@index([bundleId, createdAt])
 }
+
+model BundleAnalytics{
+   id              String    @id @default(cuid())
+   shop            String
+   views           Int?
+   uniqueViews     Int?
+   revenue         Decimal?   @db.Decimal(10, 2)
+   bundleId        String     @unique
+   orders          Int?
+   createdAt       DateTime  @default(now())
+   updatedAt       DateTime  @updatedAt
+   bundle          Bundle    @relation(fields: [bundleId], references: [ProductBundleId])
+   @@index([bundleId])
+   @@index([shop])
+}
+model ByobAnalytics{
+   id              String    @id @default(cuid())
+   shop            String
+   views           Int?
+   uniqueViews     Int?
+   revenue         Decimal?   @db.Decimal(10, 2)
+   byobId          String     @unique
+   user            BYOB      @relation(fields: [byobId], references: [productId])
+   orders          Int?
+   createdAt       DateTime  @default(now())
+   updatedAt       DateTime  @updatedAt
+}
+
+
+
+
+

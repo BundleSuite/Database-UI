@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 // Define the columns
 export const columns = [
@@ -137,24 +138,6 @@ export const columns = [
     },
   },
   {
-    accessorKey: "userId",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          User ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const userId = row.getValue("userId")
-      return <div className="font-mono text-xs">{userId}</div>
-    },
-  },
-  {
     accessorKey: "createdAt",
     header: ({ column }) => {
       return (
@@ -184,6 +167,54 @@ export const columns = [
           </div>
         </div>
       )
+    },
+  },
+  {
+    accessorKey: "shop",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Shop
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const shopInfo = row.original.shopInfo;
+      if (!shopInfo) return row.getValue("shop");
+
+      return (
+        <div className="space-y-1">
+          <div className="font-medium">{shopInfo.name}</div>
+          <div className="text-sm text-muted-foreground">{row.getValue("shop")}</div>
+          {shopInfo.url && (
+            <div className="text-xs text-muted-foreground">
+              <Link href={shopInfo.url} target="_blank">
+                {shopInfo.url}
+              </Link>
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "shopInfo.planDisplayName",
+    header: "Plan",
+    cell: ({ row }) => {
+      const shopInfo = row.original.shopInfo;
+      return shopInfo?.planDisplayName || '-';
+    },
+  },
+  {
+    accessorKey: "shopInfo.currencyCode",
+    header: "Currency",
+    cell: ({ row }) => {
+      const shopInfo = row.original.shopInfo;
+      return shopInfo?.currencyCode || '-';
     },
   },
 ]

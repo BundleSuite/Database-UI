@@ -47,6 +47,18 @@ export const columns = [
   {
     accessorKey: "shop",
     header: "Shop URL",
+    cell: ({ row }) => {
+      const url = row.getValue("shop");
+      return (
+        <Link
+          href={url}
+          target="_blank"
+          className="text-primary hover:underline"
+        >
+          {url}
+        </Link>
+      )
+    },
   },
   {
     accessorKey: "myshopifyDomain",
@@ -194,6 +206,31 @@ export const columns = [
           className="text-primary hover:underline"
         >
           View Bundles
+        </Link>
+      )
+    },
+  },
+  {
+    id: "analytics",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Analytics
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const shop = row.original.myshopifyDomain;
+      return (
+        <Link
+          href={`/analytics/${shop}`}
+          className="text-primary hover:underline"
+        >
+          View Analytics
         </Link>
       )
     },

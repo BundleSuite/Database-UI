@@ -22,6 +22,9 @@ export async function GET(request, { params }) {
           status: true,
           createdAt: true,
           userId: true
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
       }),
       prisma.bYOB.findMany({
@@ -38,6 +41,9 @@ export async function GET(request, { params }) {
           productStatus: true,
           createdAt: true,
           userId: true
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
       })
     ]);
@@ -47,7 +53,8 @@ export async function GET(request, { params }) {
         ...bundle,
         bundleType: bundle.bundleType.toLowerCase(),
         products: bundle.products,
-        variants: bundle.variants || null
+        variants: bundle.variants || null,
+        shop: shop
       })),
       byobs: byobs.map(byob => ({
         ...byob,
@@ -55,7 +62,8 @@ export async function GET(request, { params }) {
         products: byob.products,
         conditions: byob.conditions,
         media: byob.media,
-        tiers: byob.tiers
+        tiers: byob.tiers,
+        shop: shop
       }))
     };
 
