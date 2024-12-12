@@ -31,20 +31,6 @@ import {
 // Define the columns
 export const columns = [
   {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Store Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-  },
-  {
     accessorKey: "shop",
     header: "Shop URL",
     cell: ({ row }) => {
@@ -63,6 +49,75 @@ export const columns = [
   {
     accessorKey: "myshopifyDomain",
     header: "Myshopify Domain",
+  },
+  {
+    accessorKey: "bundleCounts.totalBundles",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Total Bundles
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => row.original.bundleCounts?.totalBundles || 0
+  },
+  {
+    accessorKey: "bundleCounts.byobBundles",
+    header: "BYOB Bundles",
+    cell: ({ row }) => row.original.bundleCounts?.byobBundles || 0
+  },
+  {
+    accessorKey: "bundleCounts.regularBundles",
+    header: "Regular Bundles",
+    cell: ({ row }) => row.original.bundleCounts?.regularBundles || 0
+  },
+  {
+    id: "bundles",
+    header: "View Bundles",
+    cell: ({ row }) => {
+      const shop = row.original.myshopifyDomain;
+      return (
+        <Link
+          href={`/bundles/${shop}`}
+          className="text-primary hover:underline"
+        >
+          View Bundles
+        </Link>
+      )
+    },
+  },
+  {
+    id: "analytics",
+    header: "View Analytics",
+    cell: ({ row }) => {
+      const shop = row.original.myshopifyDomain;
+      return (
+        <Link
+          href={`/analytics/${shop}`}
+          className="text-primary hover:underline"
+        >
+          View Analytics
+        </Link>
+      )
+    },
+  },
+  {
+    accessorKey: "name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Store Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
   },
   {
     accessorKey: "shopInstallation.installedAt",
@@ -185,56 +240,6 @@ export const columns = [
       )
     },
   },
-  {
-    id: "bundles",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Bundles
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const shop = row.original.myshopifyDomain;
-      return (
-        <Link
-          href={`/bundles/${shop}`}
-          className="text-primary hover:underline"
-        >
-          View Bundles
-        </Link>
-      )
-    },
-  },
-  {
-    id: "analytics",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Analytics
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const shop = row.original.myshopifyDomain;
-      return (
-        <Link
-          href={`/analytics/${shop}`}
-          className="text-primary hover:underline"
-        >
-          View Analytics
-        </Link>
-      )
-    },
-  }
 ]
 
 // Add this helper function for CSV export
