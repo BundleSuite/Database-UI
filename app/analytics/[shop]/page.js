@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs,TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   DollarSign, 
-  ShoppingCart, 
-  TrendingUp,
-  Percent,
+  ShoppingCart,
+  Eye,
 } from "lucide-react"
 import { TopBundlesTable } from '../../components/analytics/top-bundles-table'
 import { formatCurrency, formatMetric } from '@/lib/helper'
@@ -65,30 +64,22 @@ export default function ShopAnalyticsPage({ params }) {
   const stats = [
     {
       title: "Total Revenue",
-      value: formatMetric(analytics?.analytics?.totalRevenue ?? 0, 
+      value: formatMetric(analytics?.analytics?.overview?.totalRevenue ?? 0, 
         (v) => formatCurrency(v, analytics.currency)),
       icon: DollarSign,
       description: `${period} day total`
     },
     {
       title: "Total Orders",
-      value: formatMetric(analytics?.analytics?.totalOrders ?? 0),
+      value: formatMetric(analytics?.analytics?.overview?.totalOrders ?? 0),
       icon: ShoppingCart,
       description: "Bundle purchases"
     },
     {
-      title: "Average Order",
-      value: formatMetric(analytics?.analytics?.averageOrderValue ?? 0, 
-        (v) => formatCurrency(v, analytics.currency)),
-      icon: TrendingUp,
-      description: "Per bundle order"
-    },
-    {
-      title: "Total Savings",
-      value: formatMetric(analytics?.analytics?.totalDiscounts ?? 0, 
-        (v) => formatCurrency(v, analytics.currency)),
-      icon: Percent,
-      description: "Customer discounts"
+      title: "Total Views",
+      value: formatMetric(analytics?.analytics?.overview?.totalViews ?? 0),
+      icon: Eye,
+      description: "Bundle page views"
     }
   ]
 
@@ -103,7 +94,7 @@ export default function ShopAnalyticsPage({ params }) {
         </p>
       </div>
 
-      <Tabs defaultValue="30" className="space-y-4" onValueChange={setPeriod}>
+      <Tabs value={period} className="space-y-4" onValueChange={setPeriod}>
         <TabsList>
           <TabsTrigger value="7">7 Days</TabsTrigger>
           <TabsTrigger value="30">30 Days</TabsTrigger>
@@ -111,7 +102,7 @@ export default function ShopAnalyticsPage({ params }) {
         </TabsList>
       </Tabs>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

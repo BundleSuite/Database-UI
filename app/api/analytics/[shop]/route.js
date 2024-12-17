@@ -5,119 +5,141 @@ export async function GET(request, { params }) {
     const { shop } = params;
 
     try {
-        // Get query parameters for date filtering
         const { searchParams } = new URL(request.url)
-        const period = searchParams.get('period') || '30' // Default to 30 days
+        const period = searchParams.get('period') || '30'
 
-        // Calculate date range
         const endDate = new Date()
         const startDate = new Date()
         startDate.setDate(startDate.getDate() - parseInt(period))
 
-        // Fetch all analytics data for the shop
-        const [bundleRevenue, shopInfo] = await Promise.all([
-            prisma.bundleRevenue.findMany({
+        const shopInfo = await prisma.shopifyStore.findUnique({
+            where: {
+                myshopifyDomain: shop
+            },
+            select: {
+                name: true,
+                shop: true,
+                currencyCode: true,
+                planDisplayName: true,
+            }
+        });
+
+        if (!shopInfo) {
+            return NextResponse.json({ error: 'Shop not found' }, { status: 404 });
+        }
+
+        // Get analytics data
+        const [bundleAnalytics, byobAnalytics] = await Promise.all([
+            prisma.BundleAnalytics.findMany({
                 where: {
-                    shop: shop,
+                    shop: shopInfo.shop.replace('https://', ''),
                     createdAt: {
                         gte: startDate,
                         lte: endDate
+                    }
+                },
+                include: {
+                    bundle: {
+                        select: {
+                            bundleName: true,
+                            bundleType: true
+                        }
                     }
                 },
                 orderBy: {
                     createdAt: 'desc'
                 }
             }),
-            prisma.shopifyStore.findUnique({
+            prisma.ByobAnalytics.findMany({
                 where: {
-                    myshopifyDomain: shop
+                    shop: shopInfo.shop.replace('https://', ''),
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
                 },
-                select: {
-                    name: true,
-                    currencyCode: true,
-                    planDisplayName: true,
-                    shopifyPlus: true
+                include: {
+                    user: {
+                        select: {
+                            bundleName: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
                 }
             })
         ]);
 
-        // Calculate analytics metrics
+        // Process analytics data
         const analytics = {
             overview: {
-                totalRevenue: 0,
-                totalOrders: bundleRevenue.length,
-                totalBundles: 0,
-                averageOrderValue: 0,
-                totalDiscounts: 0
+                totalViews: bundleAnalytics.reduce((sum, item) => sum + (item.views || 0), 0) + 
+                          byobAnalytics.reduce((sum, item) => sum + (item.views || 0), 0),
+                totalRevenue: bundleAnalytics.reduce((sum, item) => sum + Number(item.revenue || 0), 0) + 
+                            byobAnalytics.reduce((sum, item) => sum + Number(item.revenue || 0), 0),
+                totalOrders: bundleAnalytics.reduce((sum, item) => sum + (item.orders || 0), 0) + 
+                           byobAnalytics.reduce((sum, item) => sum + (item.orders || 0), 0),
+                totalBundles: bundleAnalytics.length + byobAnalytics.length
             },
             bundleTypes: {
-                fixed: { count: 0, revenue: 0 },
-                infinite: { count: 0, revenue: 0 },
-                byob: { count: 0, revenue: 0 }
+                fixed: { 
+                    count: bundleAnalytics.filter(b => b.bundle.bundleType === 'fixed').length,
+                    revenue: bundleAnalytics
+                        .filter(b => b.bundle.bundleType === 'fixed')
+                        .reduce((sum, item) => sum + Number(item.revenue || 0), 0)
+                },
+                infinite: { 
+                    count: bundleAnalytics.filter(b => b.bundle.bundleType === 'infinite').length,
+                    revenue: bundleAnalytics
+                        .filter(b => b.bundle.bundleType === 'infinite')
+                        .reduce((sum, item) => sum + Number(item.revenue || 0), 0)
+                },
+                byob: { 
+                    count: byobAnalytics.length,
+                    revenue: byobAnalytics.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
+                }
             },
             dailyRevenue: {},
-            topBundles: {},
-            customerMetrics: {
-                newCustomers: 0,
-                returningCustomers: 0,
-                totalCustomers: new Set()
-            }
+            topBundles: {}
         };
 
-        // Process bundle revenue data
-        bundleRevenue.forEach(order => {
-            if (order.orderStatus.toLowerCase() === 'cancelled') return;
-
-            const revenue = Number(order.revenue);
-            const discount = Number(order.discountAmount);
-
-            // Update overview metrics
-            analytics.overview.totalRevenue += revenue;
-            analytics.overview.totalDiscounts += discount;
-
-            // Update bundle type metrics
-            const type = order.bundleType.toLowerCase();
-            if (analytics.bundleTypes[type]) {
-                analytics.bundleTypes[type].count++;
-                analytics.bundleTypes[type].revenue += revenue;
-            }
-
-            // Update daily revenue
-            const date = order.createdAt.toISOString().split('T')[0];
-            analytics.dailyRevenue[date] = (analytics.dailyRevenue[date] || 0) + revenue;
-
-            // Update top bundles
-            if (!analytics.topBundles[order.bundleId]) {
-                analytics.topBundles[order.bundleId] = {
-                    name: order.bundleName,
-                    orders: 0,
-                    revenue: 0,
-                    quantity: 0
-                };
-            }
-            analytics.topBundles[order.bundleId].orders++;
-            analytics.topBundles[order.bundleId].revenue += revenue;
-            analytics.topBundles[order.bundleId].quantity += order.quantity;
-
-            // Update customer metrics
-            if (order.customerEmail) {
-                analytics.customerMetrics.totalCustomers.add(order.customerEmail);
-                if (order.firstPurchase) {
-                    analytics.customerMetrics.newCustomers++;
-                } else {
-                    analytics.customerMetrics.returningCustomers++;
-                }
-            }
+        // Process daily revenue
+        [...bundleAnalytics, ...byobAnalytics].forEach(item => {
+            const date = item.createdAt.toISOString().split('T')[0];
+            analytics.dailyRevenue[date] = (analytics.dailyRevenue[date] || 0) + Number(item.revenue || 0);
         });
 
-        // Calculate averages and finalize metrics
-        analytics.overview.averageOrderValue =
-            analytics.overview.totalOrders > 0
-                ? analytics.overview.totalRevenue / analytics.overview.totalOrders
+        // Process top bundles
+        const bundleMap = {};
+        [...bundleAnalytics, ...byobAnalytics].forEach(item => {
+            const id = item.bundleId || item.byobId;
+            const name = item.bundle?.bundleName || item.user?.bundleName;
+            const type = item.bundle?.bundleType || 'byob';
+
+            if (!bundleMap[id]) {
+                bundleMap[id] = {
+                    id,
+                    name,
+                    type,
+                    views: 0,
+                    revenue: 0,
+                    orders: 0
+                };
+            }
+
+            bundleMap[id].views += item.views || 0;
+            bundleMap[id].revenue += Number(item.revenue || 0);
+            bundleMap[id].orders += item.orders || 0;
+        });
+
+        analytics.topBundles = bundleMap;
+
+        // Calculate average order value
+        analytics.overview.averageOrderValue = 
+            analytics.overview.totalOrders > 0 
+                ? analytics.overview.totalRevenue / analytics.overview.totalOrders 
                 : 0;
-        
-        
-        console.log(analytics)
 
         return NextResponse.json({
             analytics: analytics,
